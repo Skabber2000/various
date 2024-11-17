@@ -4,17 +4,20 @@ import io
 
 app = Flask(__name__)
 
-@app.route('/')
-def home():
-    return "Welcome to the QR Code Generator!"
-
-@app.route('/generate', methods=['POST'])
+@app.route('/generate', methods=['GET', 'POST'])
 def generate_qr_code():
-    data = request.json
-    product_name = data.get('product_name')
-    production_number = data.get('production_number')
-    batch_release_date = data.get('batch_release_date')
-
+    if request.method == 'POST':
+        # Handle POST request with JSON data
+        data = request.json
+        product_name = data.get('product_name')
+        production_number = data.get('production_number')
+        batch_release_date = data.get('batch_release_date')
+    elif request.method == 'GET':
+        # Handle GET request with query parameters
+        product_name = request.args.get('product_name')
+        production_number = request.args.get('production_number')
+        batch_release_date = request.args.get('batch_release_date')
+    
     if not all([product_name, production_number, batch_release_date]):
         return "Missing required fields", 400
 
