@@ -1,21 +1,12 @@
 from flask import Flask, request, send_file
 import qrcode
 import io
-from flask import Flask
-
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "Hello from Render!"
 
 app = Flask(__name__)
 
 @app.route('/')
 def home():
     return "Welcome to the QR Code Generator!"
-
-
 
 @app.route('/generate', methods=['POST'])
 def generate_qr_code():
