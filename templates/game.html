@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knights vs Assassins - Strategic Battle</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .game-info {
+            background: rgba(0,0,0,0.3);
+            padding: 15px 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .info-value {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .current-turn-knights {
+            color: #FFD700;
+        }
+
+        .current-turn-assassins {
+            color: #DC143C;
+        }
+
+        #gameBoard {
+            display: grid;
+            grid-template-columns: repeat(10, 60px);
+            grid-template-rows: repeat(8, 60px);
+            gap: 2px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+        }
+
+        .cell {
+            width: 60px;
+            height: 60px;
+            background: #2d4a6d;
+            border: 1px solid #1a2e4a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .cell:hover {
+            background: #3d5a8d;
+        }
+
+        .cell.selected {
+            background: #4a7ba7;
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        .cell.can-move {
+            background: #3a6a5a;
+            cursor: pointer;
+        }
+
+        .cell.can-attack {
+            background: #8a3a3a;
+            cursor: crosshair;
+        }
+
+        .unit {
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            position: relative;
+        }
+
+        .knights {
+            color: #FFD700;
+        }
+
+        .assassins {
+            color: #DC143C;
+        }
+
+        .health-bar {
+            position: absolute;
+            bottom: 2px;
+            left: 5px;
+            right: 5px;
+            height: 4px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 2px;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: #00ff00;
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+
+        .unit-info {
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            min-height: 120px;
+            width: 640px;
+        }
+
+        .unit-info h3 {
+            margin-bottom: 10px;
+            color: #FFD700;
+        }
+
+        .unit-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            font-size: 0.9em;
+        }
+
+        .stat {
+            background: rgba(255,255,255,0.1);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .message-log {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 10px;
+            width: 640px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .message {
+            padding: 5px;
+            margin-bottom: 5px;
+            border-left: 3px solid #667eea;
+            padding-left: 10px;
+        }
+
+        .message.attack {
+            border-left-color: #ff4444;
+        }
+
+        .message.victory {
+            border-left-color: #FFD700;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .game-over-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .game-over-overlay.show {
+            display: flex;
+        }
+
+        .game-over-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+        }
+
+        .game-over-content h2 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .game-over-content p {
+            font-size: 1.5em;
+            margin-bottom: 30px;
+        }
+
+        .legend {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            width: 640px;
+        }
+
+        .legend h4 {
+            margin-bottom: 10px;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-icon {
+            font-size: 1.5em;
+            width: 30px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>⚔️ Knights vs Assassins ⚔️</h1>
+
+    <div class="game-info">
+        <div class="info-item">
+            <span class="info-label">Turn</span>
+            <span class="info-value" id="turnNumber">1</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Current Player</span>
+            <span class="info-value" id="currentTurn">Knights</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Knights Alive</span>
+            <span class="info-value" id="knightsCount">7</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Assassins Alive</span>
+            <span class="info-value" id="assassinsCount">7</span>
+        </div>
+    </div>
+
+    <div class="legend">
+        <h4>Unit Types</h4>
+        <div class="legend-grid">
+            <div class="legend-item">
+                <span class="legend-icon knights">🛡️</span>
+                <span>Knight Swordsman (Infantry)</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-icon assassins">🗡️</span>
+                <span>Shadow Blade (Infantry)</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-icon knights">🐴</span>
+                <span>Knight Rider (Cavalry)</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-icon assassins">🏇</span>
+                <span>Dark Rider (Cavalry)</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-icon knights">👑</span>
+                <span>Paladin (Special)</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-icon assassins">🦹</span>
+                <span>Master Assassin (Special)</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="unit-info" id="unitInfo">
+        <p>Select a unit to view its stats</p>
+    </div>
+
+    <div id="gameBoard"></div>
+
+    <div class="controls">
+        <button id="endTurnBtn" onclick="endTurn()">End Turn</button>
+        <button onclick="newGame()">New Game</button>
+    </div>
+
+    <div class="message-log" id="messageLog">
+        <div class="message">Game started! Knights go first.</div>
+    </div>
+
+    <div class="game-over-overlay" id="gameOverOverlay">
+        <div class="game-over-content">
+            <h2 id="gameOverTitle">Victory!</h2>
+            <p id="gameOverMessage"></p>
+            <button onclick="newGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        let gameState = null;
+        let selectedUnit = null;
+        let selectedCell = null;
+
+        // Unit type to emoji mapping
+        const unitEmojis = {
+            'knights': {
+                'infantry': '🛡️',
+                'cavalry': '🐴',
+                'special': '👑'
+            },
+            'assassins': {
+                'infantry': '🗡️',
+                'cavalry': '🏇',
+                'special': '🦹'
+            }
+        };
+
+        function initGame() {
+            fetch('/api/game/new', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    gameState = data;
+                    renderBoard();
+                    updateGameInfo();
+                    addMessage('Game started! Knights go first.');
+                });
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '';
+
+            for (let y = 0; y < gameState.board_height; y++) {
+                for (let x = 0; x < gameState.board_width; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    cell.onclick = () => onCellClick(x, y);
+
+                    // Find unit at this position
+                    const unit = findUnitAt(x, y);
+                    if (unit) {
+                        const unitDiv = document.createElement('div');
+                        unitDiv.className = `unit ${unit.team}`;
+                        unitDiv.textContent = unitEmojis[unit.team][unit.unit_type];
+
+                        const healthBar = document.createElement('div');
+                        healthBar.className = 'health-bar';
+                        const healthFill = document.createElement('div');
+                        healthFill.className = 'health-fill';
+                        healthFill.style.width = `${(unit.health / unit.max_health) * 100}%`;
+                        healthBar.appendChild(healthFill);
+
+                        cell.appendChild(unitDiv);
+                        cell.appendChild(healthBar);
+                    }
+
+                    board.appendChild(cell);
+                }
+            }
+
+            highlightSelectedUnit();
+        }
+
+        function findUnitAt(x, y) {
+            const allUnits = [...gameState.knights_units, ...gameState.assassins_units];
+            return allUnits.find(u => u.x === x && u.y === y);
+        }
+
+        function onCellClick(x, y) {
+            if (gameState.game_over) return;
+            if (gameState.current_turn !== 'knights') return; // Only human player
+
+            const unit = findUnitAt(x, y);
+
+            if (selectedUnit) {
+                // Try to move or attack
+                if (unit && unit.team !== selectedUnit.team) {
+                    // Attack
+                    attackUnit(selectedUnit, unit);
+                } else if (!unit) {
+                    // Move
+                    moveUnit(selectedUnit, x, y);
+                }
+            } else if (unit && unit.team === gameState.current_turn) {
+                // Select unit
+                selectedUnit = unit;
+                selectedCell = { x, y };
+                renderBoard();
+                showUnitInfo(unit);
+            }
+        }
+
+        function moveUnit(unit, toX, toY) {
+            fetch('/api/game/move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    from_x: unit.x,
+                    from_y: unit.y,
+                    to_x: toX,
+                    to_y: toY
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    gameState = data.state;
+                    selectedUnit = findUnitAt(toX, toY);
+                    renderBoard();
+                    updateGameInfo();
+                    addMessage(`${unit.name} moved to (${toX}, ${toY})`);
+                } else {
+                    addMessage(`Cannot move: ${data.message}`);
+                }
+            });
+        }
+
+        function attackUnit(attacker, defender) {
+            fetch('/api/game/attack', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    attacker_x: attacker.x,
+                    attacker_y: attacker.y,
+                    defender_x: defender.x,
+                    defender_y: defender.y
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    gameState = data.state;
+                    const msg = `${data.result.attacker} attacks ${data.result.defender} for ${data.result.damage} damage!`;
+                    addMessage(msg, 'attack');
+
+                    if (!data.result.defender_alive) {
+                        addMessage(`${data.result.defender} has been defeated!`, 'attack');
+                    }
+
+                    selectedUnit = null;
+                    renderBoard();
+                    updateGameInfo();
+                    checkGameOver();
+                } else {
+                    addMessage(`Cannot attack: ${data.message}`);
+                }
+            });
+        }
+
+        function endTurn() {
+            fetch('/api/game/end-turn', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    gameState = data.state;
+                    selectedUnit = null;
+                    renderBoard();
+                    updateGameInfo();
+                    addMessage('Turn ended.');
+
+                    // AI takes turn if it's assassins' turn
+                    if (gameState.current_turn === 'assassins' && !gameState.game_over) {
+                        setTimeout(aiTakeTurn, 1000);
+                    }
+                });
+        }
+
+        function aiTakeTurn() {
+            addMessage('AI is thinking...');
+            fetch('/api/game/ai-turn', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    gameState = data.state;
+
+                    // Show AI actions
+                    data.actions.forEach(action => {
+                        if (action.action === 'move') {
+                            addMessage(`AI: ${action.unit} moved`);
+                        } else if (action.success) {
+                            addMessage(`AI: ${action.attacker} attacks ${action.defender} for ${action.damage} damage!`, 'attack');
+                        }
+                    });
+
+                    renderBoard();
+                    updateGameInfo();
+                    checkGameOver();
+
+                    if (!gameState.game_over) {
+                        addMessage("AI turn complete. Your turn!");
+                    }
+                });
+        }
+
+        function highlightSelectedUnit() {
+            if (!selectedUnit) return;
+
+            document.querySelectorAll('.cell').forEach(cell => {
+                const x = parseInt(cell.dataset.x);
+                const y = parseInt(cell.dataset.y);
+
+                if (x === selectedUnit.x && y === selectedUnit.y) {
+                    cell.classList.add('selected');
+                } else if (!selectedUnit.has_moved) {
+                    const distance = Math.abs(x - selectedUnit.x) + Math.abs(y - selectedUnit.y);
+                    if (distance <= selectedUnit.move_range && !findUnitAt(x, y)) {
+                        cell.classList.add('can-move');
+                    }
+                }
+
+                if (!selectedUnit.has_attacked) {
+                    const unit = findUnitAt(x, y);
+                    if (unit && unit.team !== selectedUnit.team) {
+                        const distance = Math.abs(x - selectedUnit.x) + Math.abs(y - selectedUnit.y);
+                        if (distance <= selectedUnit.attack_range) {
+                            cell.classList.add('can-attack');
+                        }
+                    }
+                }
+            });
+        }
+
+        function showUnitInfo(unit) {
+            const info = document.getElementById('unitInfo');
+            info.innerHTML = `
+                <h3>${unit.name} (${unit.team})</h3>
+                <div class="unit-stats">
+                    <div class="stat">❤️ HP: ${unit.health}/${unit.max_health}</div>
+                    <div class="stat">⚔️ Attack: ${unit.attack}</div>
+                    <div class="stat">🛡️ Defense: ${unit.defense}</div>
+                    <div class="stat">🏃 Move: ${unit.move_range}</div>
+                    <div class="stat">🎯 Range: ${unit.attack_range}</div>
+                    <div class="stat">📍 Pos: (${unit.x}, ${unit.y})</div>
+                </div>
+                <p style="margin-top: 10px; font-size: 0.9em;">
+                    ${unit.has_moved ? '✓ Moved' : '○ Can move'} |
+                    ${unit.has_attacked ? '✓ Attacked' : '○ Can attack'}
+                </p>
+            `;
+        }
+
+        function updateGameInfo() {
+            document.getElementById('turnNumber').textContent = gameState.turn_number;
+            const turnElement = document.getElementById('currentTurn');
+            turnElement.textContent = gameState.current_turn.charAt(0).toUpperCase() + gameState.current_turn.slice(1);
+            turnElement.className = `info-value current-turn-${gameState.current_turn}`;
+
+            document.getElementById('knightsCount').textContent = gameState.knights_units.length;
+            document.getElementById('assassinsCount').textContent = gameState.assassins_units.length;
+        }
+
+        function addMessage(text, type = '') {
+            const log = document.getElementById('messageLog');
+            const msg = document.createElement('div');
+            msg.className = `message ${type}`;
+            msg.textContent = text;
+            log.insertBefore(msg, log.firstChild);
+        }
+
+        function checkGameOver() {
+            if (gameState.game_over) {
+                const overlay = document.getElementById('gameOverOverlay');
+                const title = document.getElementById('gameOverTitle');
+                const message = document.getElementById('gameOverMessage');
+
+                if (gameState.winner === 'knights') {
+                    title.textContent = '🎉 Victory! 🎉';
+                    message.textContent = 'The Knights have won the battle!';
+                } else {
+                    title.textContent = '💀 Defeat 💀';
+                    message.textContent = 'The Assassins have won the battle!';
+                }
+
+                overlay.classList.add('show');
+                addMessage(`Game Over! ${gameState.winner} win!`, 'victory');
+            }
+        }
+
+        function newGame() {
+            document.getElementById('gameOverOverlay').classList.remove('show');
+            selectedUnit = null;
+            initGame();
+        }
+
+        // Initialize game on load
+        initGame();
+    </script>
+</body>
+</html>
