@@ -44,6 +44,11 @@ def index():
     """Serve the game page"""
     return render_template('game.html')
 
+@app.route('/shock-pulse-lab')
+def shock_pulse_lab():
+    """Serve the shock pulse lab page"""
+    return render_template('shock_pulse_lab.html')
+
 @app.route('/api/game/new', methods=['POST'])
 def new_game():
     """Create a new game"""

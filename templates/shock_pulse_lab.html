@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shock Pulse Lab - Physics Simulation</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/recharts@2.5.0/dist/Recharts.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --chart-1: hsl(222.2 47.4% 11.2%);
+            --chart-2: hsl(221.2 83.2% 53.3%);
+            --chart-3: hsl(210 40% 38%);
+            --chart-4: hsl(262.1 83.3% 57.8%);
+            --chart-5: hsl(142.1 70.6% 45.3%);
+            --background: 0 0% 100%;
+            --foreground: 222.2 84% 4.9%;
+            --card: 0 0% 100%;
+            --card-foreground: 222.2 84% 4.9%;
+            --border: 214.3 31.8% 91.4%;
+            --input: 214.3 31.8% 91.4%;
+            --primary: 222.2 47.4% 11.2%;
+            --muted: 210 40% 96.1%;
+            --muted-foreground: 215.4 16.3% 46.9%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(to bottom, hsl(210 40% 98%), white);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            border: 1px solid hsl(var(--border));
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid hsl(var(--border));
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: hsl(var(--foreground));
+        }
+
+        .card-content {
+            padding: 1.5rem;
+        }
+
+        .label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: hsl(var(--foreground));
+        }
+
+        .input, .select {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid hsl(var(--input));
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            background: white;
+            color: hsl(var(--foreground));
+        }
+
+        .input:focus, .select:focus {
+            outline: 2px solid hsl(222.2 47.4% 11.2%);
+            outline-offset: 2px;
+        }
+
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: hsl(var(--muted));
+            transition: 0.4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: hsl(222.2 47.4% 11.2%);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        .tabs {
+            width: 100%;
+        }
+
+        .tabs-list {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid hsl(var(--border));
+            margin-bottom: 1rem;
+        }
+
+        .tabs-trigger {
+            padding: 0.75rem 1rem;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: hsl(var(--muted-foreground));
+            transition: all 0.2s;
+        }
+
+        .tabs-trigger:hover {
+            color: hsl(var(--foreground));
+        }
+
+        .tabs-trigger.active {
+            color: hsl(var(--foreground));
+            border-bottom-color: hsl(222.2 47.4% 11.2%);
+        }
+
+        .tabs-content {
+            display: none;
+        }
+
+        .tabs-content.active {
+            display: block;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .grid-cols-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .grid-cols-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .col-span-2 {
+            grid-column: span 2;
+        }
+
+        .metric-card {
+            background: white;
+            border: 1px solid hsl(var(--border));
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: hsl(var(--muted-foreground));
+        }
+
+        .metric-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: hsl(var(--foreground));
+        }
+
+        .metric-panel {
+            background: white;
+            border: 1px solid hsl(var(--border));
+            border-radius: 0.75rem;
+            padding: 1rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid hsl(var(--border));
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+
+        .text-muted {
+            color: hsl(var(--muted-foreground));
+            font-size: 0.875rem;
+        }
+
+        .text-sm {
+            font-size: 0.875rem;
+        }
+
+        .text-xs {
+            font-size: 0.75rem;
+        }
+
+        .bg-slate-50 {
+            background-color: hsl(210 40% 96.1%);
+        }
+
+        .rounded-xl {
+            border-radius: 0.75rem;
+        }
+
+        .p-3 {
+            padding: 0.75rem;
+        }
+
+        .formula {
+            font-size: 0.75rem;
+            color: hsl(215.4 16.3% 46.9%);
+            margin-top: 0.75rem;
+        }
+
+        .formula code {
+            background: hsl(210 40% 96.1%);
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+        }
+
+        @media (min-width: 768px) {
+            .md-grid-cols-2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1280px) {
+            .xl-grid-cols-3 {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .xl-col-span-1 {
+                grid-column: span 1;
+            }
+            .xl-col-span-2 {
+                grid-column: span 2;
+            }
+            .xl-col-span-3 {
+                grid-column: span 3;
+            }
+        }
+
+        .max-w-7xl {
+            max-width: 80rem;
+            margin: 0 auto;
+        }
+
+        #root {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        {% raw %}
+        const { useState, useMemo } = React;
+        const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } = Recharts;
+
+        // --- Physics Helpers ---
+        const G0 = 9.80665; // m/s^2
+
+        function halfSine(t, T, A) {
+            if (t < 0 || t > T) return 0;
+            return A * Math.sin(Math.PI * (t / T));
+        }
+
+        function haversinePulse(t, T, A) {
+            if (t < 0 || t > T) return 0;
+            return A * (1 - Math.cos((2 * Math.PI * t) / T)) / 2;
+        }
+
+        function trapezoidPulse(t, T, A, riseFrac = 0.2, fallFrac = 0.2) {
+            if (t < 0 || t > T) return 0;
+            const tr = T * riseFrac;
+            const tf = T * fallFrac;
+            const flatStart = tr;
+            const flatEnd = T - tf;
+            if (t <= tr) return (A / tr) * t;
+            if (t <= flatEnd) return A;
+            return A * (1 - (t - flatEnd) / tf);
+        }
+
+        function generatePulseData({ peakG, durationMs, shape, sampleRate = 5000 }) {
+            const T = durationMs / 1000;
+            const A = peakG * G0;
+            const dt = 1 / sampleRate;
+            const N = Math.max(2, Math.floor(T / dt) + 1);
+
+            let a = [];
+            let v = [];
+            let x = [];
+            let t = [];
+
+            let vel = 0;
+            let pos = 0;
+
+            for (let i = 0; i < N; i++) {
+                const ti = i * dt;
+                let ai = 0;
+                if (shape === "half-sine") ai = halfSine(ti, T, A);
+                else if (shape === "haversine") ai = haversinePulse(ti, T, A);
+                else ai = trapezoidPulse(ti, T, A);
+
+                vel += ai * dt;
+                pos += vel * dt;
+
+                t.push(ti);
+                a.push(ai);
+                v.push(vel);
+                x.push(pos);
+            }
+
+            const aPk = Math.max(...a.map(v => Math.abs(v))) / G0;
+            const dv = v[v.length - 1];
+            const J = dv;
+
+            const data = t.map((ti, i) => ({
+                t_ms: ti * 1000,
+                a_g: a[i] / G0,
+                v_ms: v[i],
+                x_mm: x[i] * 1000,
+            }));
+
+            data.push({ t_ms: durationMs, a_g: 0, v_ms: dv, x_mm: x[x.length - 1] * 1000 });
+
+            return { data, metrics: { aPk_g: aPk, T_ms: durationMs, dv_ms: dv, J_ms: J, peakG_input: peakG } };
+        }
+
+        function niceNumber(n, digits = 2) {
+            return Number.parseFloat(n.toFixed(digits));
+        }
+
+        // --- UI Components ---
+        function Metric({ label, value }) {
+            return (
+                <div className="metric-card">
+                    <div className="metric-label">{label}</div>
+                    <div className="metric-value">{value}</div>
+                </div>
+            );
+        }
+
+        function MetricPanel({ title, children }) {
+            return (
+                <div className="metric-panel">
+                    <div className="text-sm" style={{ fontWeight: 600, marginBottom: '0.5rem' }}>{title}</div>
+                    {children}
+                </div>
+            );
+        }
+
+        function MetricRow({ k, v }) {
+            return (
+                <div className="metric-row">
+                    <span className="text-sm" style={{ color: 'hsl(215.4 16.3% 46.9%)' }}>{k}</span>
+                    <span className="text-sm" style={{ fontWeight: 500 }}>{v}</span>
+                </div>
+            );
+        }
+
+        function Formula() {
+            return (
+                <div className="formula">
+                    <div style={{ fontWeight: 600 }}>Half‑sine closed‑form:</div>
+                    <div><code>a(t) = A·sin(πt/T), 0≤t≤T</code></div>
+                    <div><code>Δv = ∫₀ᵀ a(t)dt = 2AT/π</code></div>
+                    <div><code>A = g₀·g_peak</code></div>
+                </div>
+            );
+        }
+
+        function Tabs({ defaultValue, children }) {
+            const [activeTab, setActiveTab] = useState(defaultValue);
+
+            const tabsList = React.Children.toArray(children).find(child => child.type.name === 'TabsList');
+            const tabsContent = React.Children.toArray(children).filter(child => child.type.name === 'TabsContent');
+
+            return (
+                <div className="tabs">
+                    {React.cloneElement(tabsList, { activeTab, setActiveTab })}
+                    {tabsContent.map(content => React.cloneElement(content, { activeTab }))}
+                </div>
+            );
+        }
+
+        function TabsList({ activeTab, setActiveTab, children }) {
+            return (
+                <div className="tabs-list">
+                    {React.Children.map(children, child =>
+                        React.cloneElement(child, { activeTab, setActiveTab })
+                    )}
+                </div>
+            );
+        }
+
+        function TabsTrigger({ value, activeTab, setActiveTab, children }) {
+            return (
+                <button
+                    className={`tabs-trigger ${activeTab === value ? 'active' : ''}`}
+                    onClick={() => setActiveTab(value)}
+                >
+                    {children}
+                </button>
+            );
+        }
+
+        function TabsContent({ value, activeTab, children }) {
+            return (
+                <div className={`tabs-content ${activeTab === value ? 'active' : ''}`}>
+                    {children}
+                </div>
+            );
+        }
+
+        // --- Main App ---
+        function ShockPulseLab() {
+            const [shape, setShape] = useState("half-sine");
+            const [peakG, setPeakG] = useState(45);
+            const [duration, setDuration] = useState(8);
+            const [fs, setFs] = useState(10000);
+            const [showVelocity, setShowVelocity] = useState(true);
+            const [showDisplacement, setShowDisplacement] = useState(true);
+
+            const [sweepMode, setSweepMode] = useState(true);
+            const [gMin, setGMin] = useState(30);
+            const [gMax, setGMax] = useState(60);
+            const [tMin, setTMin] = useState(3);
+            const [tMax, setTMax] = useState(15);
+            const [steps, setSteps] = useState(5);
+
+            const single = useMemo(() =>
+                generatePulseData({ peakG, durationMs: duration, shape, sampleRate: fs }),
+                [peakG, duration, shape, fs]
+            );
+
+            const sweep = useMemo(() => {
+                const series = [];
+                const gStep = steps > 1 ? (gMax - gMin) / (steps - 1) : 0;
+                const tStep = steps > 1 ? (tMax - tMin) / (steps - 1) : 0;
+
+                const colors = ['#1e3c72', '#2a5298', '#3a5a8d', '#764ba2', '#22c55e'];
+
+                for (let i = 0; i < steps; i++) {
+                    const g = gMin + i * gStep;
+                    const T = tMax - i * tStep;
+                    const { data, metrics } = generatePulseData({ peakG: g, durationMs: T, shape, sampleRate: fs });
+                    series.push({
+                        key: `s${i}`,
+                        label: `${niceNumber(g, 0)} g, ${niceNumber(T, 1)} ms`,
+                        color: colors[i % colors.length],
+                        data,
+                        metrics
+                    });
+                }
+                return series;
+            }, [gMin, gMax, tMin, tMax, steps, shape, fs]);
+
+            return (
+                <div className="max-w-7xl" style={{ width: '100%' }}>
+                    <div className="grid xl-grid-cols-3" style={{ gap: '1.5rem' }}>
+                        <div className="card xl-col-span-1">
+                            <div className="card-header">
+                                <h1 className="card-title">Shock Pulse Lab</h1>
+                                <p className="text-muted" style={{ marginTop: '0.5rem' }}>
+                                    Simulate 30–60 g shocks with 3–15 ms duration. Half‑sine, haversine, or trapezoid pulses.
+                                    See acceleration (g), velocity (m/s), and displacement (mm).
+                                </p>
+                            </div>
+                            <div className="card-content">
+                                <div className="grid grid-cols-2" style={{ gap: '0.75rem' }}>
+                                    <div className="col-span-2">
+                                        <label className="label">Pulse shape</label>
+                                        <select className="select" value={shape} onChange={(e) => setShape(e.target.value)}>
+                                            <option value="half-sine">Half‑sine</option>
+                                            <option value="haversine">Haversine</option>
+                                            <option value="trapezoid">Trapezoid</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="label">Sample rate (Hz)</label>
+                                        <input className="input" type="number" value={fs} min={2000} step={1000}
+                                            onChange={(e) => setFs(Number(e.target.value))} />
+                                    </div>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '1.5rem' }}>
+                                        <div className="switch-container">
+                                            <label className="switch">
+                                                <input type="checkbox" checked={sweepMode}
+                                                    onChange={(e) => setSweepMode(e.target.checked)} />
+                                                <span className="slider"></span>
+                                            </label>
+                                            <label className="label" style={{ margin: 0 }}>Range sweep</label>
+                                        </div>
+                                    </div>
+
+                                    {!sweepMode ? (
+                                        <>
+                                            <div>
+                                                <label className="label">Peak (g)</label>
+                                                <input className="input" type="number" value={peakG} min={1} max={200} step={1}
+                                                    onChange={(e) => setPeakG(Number(e.target.value))} />
+                                            </div>
+                                            <div>
+                                                <label className="label">Duration (ms)</label>
+                                                <input className="input" type="number" value={duration} min={0.1} max={100} step={0.1}
+                                                    onChange={(e) => setDuration(Number(e.target.value))} />
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div>
+                                                <label className="label">g min</label>
+                                                <input className="input" type="number" value={gMin}
+                                                    onChange={(e) => setGMin(Number(e.target.value))} />
+                                            </div>
+                                            <div>
+                                                <label className="label">g max</label>
+                                                <input className="input" type="number" value={gMax}
+                                                    onChange={(e) => setGMax(Number(e.target.value))} />
+                                            </div>
+                                            <div>
+                                                <label className="label">ms min</label>
+                                                <input className="input" type="number" value={tMin}
+                                                    onChange={(e) => setTMin(Number(e.target.value))} />
+                                            </div>
+                                            <div>
+                                                <label className="label">ms max</label>
+                                                <input className="input" type="number" value={tMax}
+                                                    onChange={(e) => setTMax(Number(e.target.value))} />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="label">Steps</label>
+                                                <input className="input" type="number" value={steps} min={2} max={12}
+                                                    onChange={(e) => setSteps(Number(e.target.value))} />
+                                            </div>
+                                        </>
+                                    )}
+
+                                    <div className="col-span-2 grid grid-cols-3 bg-slate-50 rounded-xl p-3" style={{ gap: '0.75rem', marginTop: '0.5rem' }}>
+                                        {!sweepMode ? (
+                                            <>
+                                                <Metric label="Peak (input)" value={`${niceNumber(single.metrics.peakG_input)} g`} />
+                                                <Metric label="Duration" value={`${niceNumber(single.metrics.T_ms, 2)} ms`} />
+                                                <Metric label="Δv" value={`${niceNumber(single.metrics.dv_ms, 4)} m/s`} />
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Metric label="g range" value={`${gMin}–${gMax} g`} />
+                                                <Metric label="ms range" value={`${tMin}–${tMax} ms`} />
+                                                <Metric label="# series" value={`${steps}`} />
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="card xl-col-span-2">
+                            <div className="card-header">
+                                <h2 className="card-title">Acceleration (g)</h2>
+                            </div>
+                            <div className="card-content" style={{ height: '360px' }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={!sweepMode ? single.data : undefined}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis
+                                            dataKey="t_ms"
+                                            type="number"
+                                            domain={[0, sweepMode ? Math.max(tMin, tMax) : duration]}
+                                            label={{ value: "Time (ms)", position: "insideBottomRight", offset: -4 }}
+                                        />
+                                        <YAxis
+                                            yAxisId="left"
+                                            label={{ value: "g", angle: -90, position: "insideLeft" }}
+                                        />
+                                        <Tooltip
+                                            formatter={(value, name) => [niceNumber(value, 4), name]}
+                                            labelFormatter={(l) => `${niceNumber(Number(l), 3)} ms`}
+                                        />
+                                        <Legend />
+                                        {!sweepMode ? (
+                                            <>
+                                                <Line
+                                                    yAxisId="left"
+                                                    type="monotone"
+                                                    dataKey="a_g"
+                                                    name={`${niceNumber(peakG)} g / ${niceNumber(duration)} ms`}
+                                                    dot={false}
+                                                    strokeWidth={2}
+                                                    stroke="#2a5298"
+                                                />
+                                                <ReferenceLine x={duration} stroke="#8884d8" strokeDasharray="4 4" />
+                                            </>
+                                        ) : (
+                                            sweep.map((s) => (
+                                                <Line
+                                                    key={s.key}
+                                                    yAxisId="left"
+                                                    type="monotone"
+                                                    data={s.data}
+                                                    dataKey="a_g"
+                                                    name={s.label}
+                                                    dot={false}
+                                                    strokeWidth={2}
+                                                    stroke={s.color}
+                                                />
+                                            ))
+                                        )}
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        <div className="card xl-col-span-3">
+                            <div className="card-header">
+                                <Tabs defaultValue="velocity">
+                                    <TabsList>
+                                        <TabsTrigger value="velocity">Velocity</TabsTrigger>
+                                        <TabsTrigger value="displacement">Displacement</TabsTrigger>
+                                        <TabsTrigger value="metrics">Metrics</TabsTrigger>
+                                    </TabsList>
+                                    <TabsContent value="velocity">
+                                        <div style={{ height: '320px' }}>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <LineChart>
+                                                    <CartesianGrid strokeDasharray="3 3" />
+                                                    <XAxis
+                                                        dataKey="t_ms"
+                                                        type="number"
+                                                        domain={[0, sweepMode ? Math.max(tMin, tMax) : duration]}
+                                                        label={{ value: "Time (ms)", position: "insideBottomRight", offset: -4 }}
+                                                    />
+                                                    <YAxis label={{ value: "m/s", angle: -90, position: "insideLeft" }} />
+                                                    <Tooltip
+                                                        formatter={(value, name) => [niceNumber(value, 4), name]}
+                                                        labelFormatter={(l) => `${niceNumber(Number(l), 3)} ms`}
+                                                    />
+                                                    <Legend />
+                                                    {!sweepMode ? (
+                                                        <Line
+                                                            type="monotone"
+                                                            dataKey="v_ms"
+                                                            data={single.data}
+                                                            name="v (m/s)"
+                                                            dot={false}
+                                                            strokeWidth={2}
+                                                            stroke="#2a5298"
+                                                        />
+                                                    ) : (
+                                                        sweep.map((s) => (
+                                                            <Line
+                                                                key={s.key}
+                                                                type="monotone"
+                                                                data={s.data}
+                                                                dataKey="v_ms"
+                                                                name={`${s.label} — v`}
+                                                                dot={false}
+                                                                strokeWidth={2}
+                                                                stroke={s.color}
+                                                            />
+                                                        ))
+                                                    )}
+                                                </LineChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </TabsContent>
+                                    <TabsContent value="displacement">
+                                        <div style={{ height: '320px' }}>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <LineChart>
+                                                    <CartesianGrid strokeDasharray="3 3" />
+                                                    <XAxis
+                                                        dataKey="t_ms"
+                                                        type="number"
+                                                        domain={[0, sweepMode ? Math.max(tMin, tMax) : duration]}
+                                                        label={{ value: "Time (ms)", position: "insideBottomRight", offset: -4 }}
+                                                    />
+                                                    <YAxis label={{ value: "mm", angle: -90, position: "insideLeft" }} />
+                                                    <Tooltip
+                                                        formatter={(value, name) => [niceNumber(value, 4), name]}
+                                                        labelFormatter={(l) => `${niceNumber(Number(l), 3)} ms`}
+                                                    />
+                                                    <Legend />
+                                                    {!sweepMode ? (
+                                                        <Line
+                                                            type="monotone"
+                                                            dataKey="x_mm"
+                                                            data={single.data}
+                                                            name="x (mm)"
+                                                            dot={false}
+                                                            strokeWidth={2}
+                                                            stroke="#2a5298"
+                                                        />
+                                                    ) : (
+                                                        sweep.map((s) => (
+                                                            <Line
+                                                                key={s.key}
+                                                                type="monotone"
+                                                                data={s.data}
+                                                                dataKey="x_mm"
+                                                                name={`${s.label} — x`}
+                                                                dot={false}
+                                                                strokeWidth={2}
+                                                                stroke={s.color}
+                                                            />
+                                                        ))
+                                                    )}
+                                                </LineChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </TabsContent>
+                                    <TabsContent value="metrics">
+                                        <div className="grid md-grid-cols-2" style={{ gap: '1rem', padding: '0.5rem' }}>
+                                            {!sweepMode ? (
+                                                <MetricPanel title="Single pulse metrics">
+                                                    <MetricRow k="Peak (input)" v={`${niceNumber(single.metrics.peakG_input)} g`} />
+                                                    <MetricRow k="Duration" v={`${niceNumber(single.metrics.T_ms)} ms`} />
+                                                    <MetricRow k="Peak accel (computed)" v={`${niceNumber(single.metrics.aPk_g)} g`} />
+                                                    <MetricRow k="Δv (specific impulse)" v={`${niceNumber(single.metrics.dv_ms, 5)} m/s`} />
+                                                    <Formula />
+                                                </MetricPanel>
+                                            ) : (
+                                                <MetricPanel title="Sweep summary (endpoints)">
+                                                    <MetricRow k="g range" v={`${gMin} – ${gMax} g`} />
+                                                    <MetricRow k="ms range" v={`${tMin} – ${tMax} ms`} />
+                                                    <MetricRow k="# series" v={`${steps}`} />
+                                                    <p className="text-xs text-muted" style={{ marginTop: '0.5rem' }}>
+                                                        Each series is integrated to velocity and displacement using forward‑Euler with Δt=1/fs.
+                                                        Δv after pulse equals the integral of a(t).
+                                                    </p>
+                                                    <Formula />
+                                                </MetricPanel>
+                                            )}
+                                        </div>
+                                    </TabsContent>
+                                </Tabs>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ShockPulseLab />);
+        {% endraw %}
+    </script>
+</body>
+</html>
